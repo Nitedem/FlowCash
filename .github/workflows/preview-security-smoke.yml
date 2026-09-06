@@ -56,7 +56,7 @@ jobs:
           OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           set -euo pipefail
-          URL="${DEPLOYMENT_URL}/api/fx?from=EUR&to=USD&amount=100"
+          URL="${DEPLOYMENT_URL}/api/fx/quote?from=EUR&to=USD&amount=100"
           response="$(mktemp)"
           status="$(curl -sS -o "$response" -w '%{http_code}' \
             --connect-timeout 10 --max-time 30 \
