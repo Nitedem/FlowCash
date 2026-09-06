@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   try {
     const result = await withTransaction(async (client) => {
       const { rows } = await client.query(
-        `SELECT p.id AS user_id, p.full_name, w.id AS wallet_id, w.public_code, w.currency, w.balance::text AS balance, w.status
+        `SELECT p.id AS user_id, p.full_name, w.public_code, w.currency, w.status
          FROM flowcash.wallets w
          JOIN flowcash.profiles p ON p.id = w.user_id
          WHERE w.public_code = $1
