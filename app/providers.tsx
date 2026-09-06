@@ -16,6 +16,7 @@ export function Providers({ children }: { children: ReactNode }) {
       replace={router.replace}
       onSessionChange={() => router.refresh()}
       emailOTP
+      emailVerification
       redirectTo="/dashboard"
     >
       {children}
