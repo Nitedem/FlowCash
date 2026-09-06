@@ -70,8 +70,20 @@ export async function POST(request: Request) {
         throw Object.assign(new Error('A request with this idempotency key is already processing'), { code: 'IDEMPOTENCY_PROCESSING' });
       }
 
+      const senderResult = await client.query(
+        `SELECT id, balance, currency, status
+         FROM flowcash.wallets
+         WHERE user_id = $1 AND currency = 'XAF'
+         LIMIT 1`,
+        [user.id],
+      );
+      const sender = senderResult.rows[0];
+
+      if (!sender) throw Object.assign(new Error('Sender wallet not found'), { code: 'WALLET_NOT_FOUND' });
+      if (sender.status !== 'active') throw Object.assign(new Error('Sender wallet is not active'), { code: 'WALLET_INACTIVE' });
+
       const recipientResult = await client.query(
-        `SELECT p.id, p.email, w.id AS wallet_id, w.balance, w.currency, w.status
+        `SELECT p.id, p.email, w.id AS wallet_id
          FROM flowcash.profiles p
          JOIN flowcash.wallets w ON w.user_id = p.id AND w.currency = 'XAF'
          WHERE LOWER(p.email) = $1
@@ -83,32 +95,8 @@ export async function POST(request: Request) {
       if (!recipient) throw Object.assign(new Error('Recipient not found'), { code: 'RECIPIENT_NOT_FOUND' });
       if (recipient.id === user.id) throw Object.assign(new Error('Self transfer is not allowed'), { code: 'SELF_TRANSFER' });
 
-      const walletResult = await client.query(
-        `SELECT id, balance, currency, status
-         FROM flowcash.wallets
-         WHERE user_id = $1 AND currency = 'XAF'
-         FOR UPDATE`,
-        [user.id],
-      );
-      const sender = walletResult.rows[0];
-
-      if (!sender) throw Object.assign(new Error('Sender wallet not found'), { code: 'WALLET_NOT_FOUND' });
-      if (sender.status !== 'active') throw Object.assign(new Error('Sender wallet is not active'), { code: 'WALLET_INACTIVE' });
-      if (recipient.status !== 'active') throw Object.assign(new Error('Recipient wallet is not active'), { code: 'RECIPIENT_INACTIVE' });
-
       const senderId = String(sender.id);
       const recipientId = String(recipient.wallet_id);
-      if (senderId.localeCompare(recipientId) > 0) {
-        await client.query(
-          `SELECT id FROM flowcash.wallets WHERE id = $1 FOR UPDATE`,
-          [recipientId],
-        );
-      } else {
-        await client.query(
-          `SELECT id FROM flowcash.wallets WHERE id = $1 FOR UPDATE`,
-          [recipientId],
-        );
-      }
 
       const lockedWallets = await client.query(
         `SELECT id, balance, status
