@@ -30,14 +30,15 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
       updated_at = now()
   `;
 
-  const wallets = (await sql`
+  const wallets = await sql`
     INSERT INTO flowcash.wallets (user_id, currency)
     VALUES (${userId}, 'XAF')
     ON CONFLICT (user_id, currency) DO UPDATE SET updated_at = now()
     RETURNING id, balance::text, currency, status
-  `) as unknown as WalletRow[];
+  `;
 
-  const wallet = wallets[0];
+  const wallet = wallets[0] as WalletRow | undefined;
+  if (!wallet) throw new Error('Wallet could not be provisioned');
 
   await sql`
     INSERT INTO flowcash.ledger_accounts (wallet_id, code, currency)
@@ -73,7 +74,7 @@ export default async function DashboardPage() {
     WHERE wallet_id = ${wallet.id}
     ORDER BY created_at DESC
     LIMIT 10
-  `) as unknown as TransactionRow[];
+  `) as TransactionRow[];
 
   return (
     <main className="dashboard-shell">
