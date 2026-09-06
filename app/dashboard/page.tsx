@@ -18,9 +18,6 @@ function transactionSign(type: string) { return type === 'deposit' || type === '
 
 async function ensureWallet(userId: string, name?: string | null, email?: string | null) {
   const normalizedEmail = email?.trim().toLowerCase() || null;
-
-  // Keep email globally unique. If another FlowCash financial profile already owns it,
-  // never merge/reassign financial identities and never let the unique index crash the dashboard.
   if (normalizedEmail) {
     const owners = await sql`SELECT id FROM flowcash.profiles WHERE lower(email)=${normalizedEmail} LIMIT 1` as { id: string }[];
     const emailOwner = owners[0]?.id;
@@ -28,7 +25,11 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
   }
 
   await sql`INSERT INTO flowcash.profiles (id,full_name,email) VALUES (${userId},${name||normalizedEmail||null},${normalizedEmail}) ON CONFLICT (id) DO UPDATE SET full_name=COALESCE(EXCLUDED.full_name,flowcash.profiles.full_name),email=COALESCE(EXCLUDED.email,flowcash.profiles.email),updated_at=now()`;
-  const wallets = await sql`INSERT INTO flowcash.wallets (user_id,currency) VALUES (${userId},'XAF') ON CONFLICT (user_id,currency) DO UPDATE SET updated_at=now() RETURNING id,balance::text,currency,status`;
+  const wallets = await sql`
+    INSERT INTO flowcash.wallets (user_id,currency,public_code)
+    VALUES (${userId},'XAF','FCW-' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,12)))
+    ON CONFLICT (user_id,currency) DO UPDATE SET updated_at=now()
+    RETURNING id,balance::text,currency,status`;
   const wallet = wallets[0] as WalletRow|undefined; if(!wallet)throw new Error('Wallet could not be provisioned');
   await sql`INSERT INTO flowcash.ledger_accounts (wallet_id,code,currency) VALUES (${wallet.id},'CASH','XAF'),(${wallet.id},'AVAILABLE','XAF') ON CONFLICT (wallet_id,code) DO NOTHING`;
   return wallet;
