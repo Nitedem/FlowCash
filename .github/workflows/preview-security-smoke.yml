@@ -64,10 +64,13 @@ jobs:
             "$URL")"
           echo "HTTP status: $status"
           cat "$response"
-          test "$status" = "200"
-          node - <<'NODE'
+          if [ "$status" != "200" ]; then
+            echo "Protected FX endpoint failed with HTTP $status"
+            exit 1
+          fi
+          RESPONSE_FILE="$response" node - <<'NODE'
           const fs = require('fs');
-          const body = JSON.parse(fs.readFileSync(process.env.RESPONSE_FILE || '/dev/null', 'utf8'));
+          const body = JSON.parse(fs.readFileSync(process.env.RESPONSE_FILE, 'utf8'));
           if (body.from !== 'EUR' || body.to !== 'USD' || !(body.rate > 0)) {
             console.error('Invalid FX response:', body);
             process.exit(1);
