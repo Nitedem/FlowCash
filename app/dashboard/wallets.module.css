@@ -1,145 +1,35 @@
-.walletCardMain {
-  min-width: 0;
-}
-
-.walletDelete {
-  border: 1px solid #6d3c43;
-  border-radius: 9px;
-  padding: 8px 11px;
-  background: transparent;
-  color: #df9aa3;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.walletDelete:disabled {
-  cursor: not-allowed;
-  opacity: .45;
-}
-
-.walletManagementNote {
-  margin: 12px 0 0;
-  color: #7894ad;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.walletOperations {
-  margin-top: 16px;
-  padding: 18px;
-  border: 1px solid #38536d;
-  border-radius: 14px;
-  background: rgba(18, 56, 90, .2);
-}
-
-.walletOperationHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.walletOperationHead small {
-  display: block;
-  color: #7894ad;
-  font-size: 10px;
-  letter-spacing: .12em;
-}
-
-.walletOperationHead strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 15px;
-}
-
-.walletOperationHead span {
-  padding: 4px 7px;
-  border: 1px solid #695a35;
-  border-radius: 999px;
-  color: #d7bf7d;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .1em;
-}
-
-.walletOperationForm {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: end;
-}
-
-.walletOperationForm label {
-  display: grid;
-  gap: 7px;
-  color: #c7d3de;
-  font-size: 12px;
-}
-
-.walletOperationInput {
-  display: flex;
-  align-items: center;
-  border: 1px solid #38536d;
-  border-radius: 11px;
-  background: #07111f;
-  overflow: hidden;
-}
-
-.walletOperationInput:focus-within {
-  border-color: #8aa8c2;
-}
-
-.walletOperationInput input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  padding: 13px 14px;
-  background: transparent;
-  color: #f6f8fb;
-}
-
-.walletOperationInput span {
-  padding-right: 14px;
-  color: #7894ad;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.walletOperationForm button {
-  border: 0;
-  border-radius: 11px;
-  padding: 14px 17px;
-  background: #f6f8fb;
-  color: #07111f;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.walletOperationForm button:disabled {
-  cursor: wait;
-  opacity: .55;
-}
-
-.walletOperationNote {
-  margin: 9px 0 0;
-  color: #7894ad;
-  font-size: 10px;
-  line-height: 1.45;
-}
-
-.formSuccess {
-  color: #8fd1aa;
-  font-size: 12px;
-}
-
-@media (max-width: 700px) {
-  .walletOperationForm {
-    grid-template-columns: 1fr;
-  }
-
-  .walletOperationForm button {
-    width: 100%;
-  }
-}
+.walletCardMain { min-width: 0; }
+.walletDelete { border: 1px solid #6d3c43; border-radius: 9px; padding: 8px 11px; background: transparent; color: #df9aa3; font-size: 11px; font-weight: 700; }
+.walletDelete:disabled { cursor: not-allowed; opacity: .45; }
+.walletManagementNote { margin: 12px 0 0; color: #7894ad; font-size: 11px; line-height: 1.5; }
+.walletOperations { margin-top: 16px; padding: 18px; border: 1px solid #38536d; border-radius: 14px; background: rgba(18, 56, 90, .2); }
+.walletOperationHead { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.walletOperationHead small { display: block; color: #7894ad; font-size: 10px; letter-spacing: .12em; }
+.walletOperationHead strong { display: block; margin-top: 5px; font-size: 15px; }
+.walletOperationHead span { padding: 4px 7px; border: 1px solid #695a35; border-radius: 999px; color: #d7bf7d; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
+.walletOperationForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.walletOperationForm label { display: grid; gap: 7px; color: #c7d3de; font-size: 12px; }
+.walletOperationInput { display: flex; align-items: center; border: 1px solid #38536d; border-radius: 11px; background: #07111f; overflow: hidden; }
+.walletOperationInput:focus-within { border-color: #8aa8c2; }
+.walletOperationInput input { width: 100%; min-width: 0; border: 0; outline: 0; padding: 13px 14px; background: transparent; color: #f6f8fb; }
+.walletOperationInput span { padding-right: 14px; color: #7894ad; font-size: 11px; font-weight: 800; }
+.walletOperationForm button { border: 0; border-radius: 11px; padding: 14px 17px; background: #f6f8fb; color: #07111f; font-weight: 800; white-space: nowrap; }
+.walletOperationForm button:disabled { cursor: wait; opacity: .55; }
+.walletOperationNote { margin: 9px 0 0; color: #7894ad; font-size: 10px; line-height: 1.45; }
+.formSuccess { color: #8fd1aa; font-size: 12px; }
+.operationSwitch { display: flex; gap: 6px; margin-bottom: 12px; }
+.operationSwitch button { border: 1px solid #38536d; border-radius: 9px; padding: 8px 12px; background: transparent; color: #9eb2c4; font-size: 11px; font-weight: 700; }
+.operationSwitch button.operationActive { background: #dce7f1; color: #07111f; border-color: #dce7f1; }
+.confirmationCard { margin-top: 12px; padding: 18px; border: 1px solid #536b7e; border-radius: 14px; background: rgba(7, 17, 31, .72); }
+.confirmationWarning { color: #d7bf7d; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.confirmationCard h3 { margin: 7px 0 15px; font-size: 17px; }
+.confirmationGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.confirmationGrid div { padding: 10px 11px; border: 1px solid #263c50; border-radius: 10px; background: rgba(18, 36, 52, .5); }
+.confirmationGrid dt { color: #7894ad; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.confirmationGrid dd { margin: 4px 0 0; color: #f6f8fb; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.confirmationHint { margin: 13px 0; color: #9eb2c4; font-size: 11px; line-height: 1.5; }
+.confirmationActions { display: flex; justify-content: flex-end; gap: 8px; }
+.confirmationActions button { border: 1px solid #38536d; border-radius: 10px; padding: 11px 14px; background: transparent; color: #c7d3de; font-weight: 700; }
+.confirmationActions button:last-child { border-color: #dce7f1; background: #dce7f1; color: #07111f; }
+.confirmationActions button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 700px) { .walletOperationForm { grid-template-columns: 1fr; } .walletOperationForm button { width: 100%; } .confirmationGrid { grid-template-columns: 1fr; } .confirmationActions { flex-direction: column; } .confirmationActions button { width: 100%; } }
