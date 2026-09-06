@@ -52,8 +52,9 @@ export async function PATCH(request: Request) {
       UPDATE flowcash.notifications
       SET read_at = COALESCE(read_at, now())
       WHERE user_id = ${user.id} AND read_at IS NULL
+      RETURNING id
     `;
-    return Response.json({ updated: result.count ?? 0 });
+    return Response.json({ updated: result.length });
   }
 
   if (typeof body.id !== 'string' || !body.id.trim()) return Response.json({ error: 'Notification id is required' }, { status: 400 });
