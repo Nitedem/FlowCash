@@ -1,10 +1,18 @@
+import { createHash } from 'node:crypto';
 import { auth } from '@/lib/auth/server';
 import { withTransaction } from '@/lib/db/transaction';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_TRANSFER_XAF = 100_000_000;
+const MAX_DESCRIPTION_LENGTH = 500;
+
 function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status });
+}
+
+function hashRequest(payload: { recipientEmail: string; amount: number; description: string | null }) {
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
 
 export async function POST(request: Request) {
@@ -14,30 +22,32 @@ export async function POST(request: Request) {
   if (!user) return jsonError('Authentication required', 401);
 
   const idempotencyKey = request.headers.get('Idempotency-Key')?.trim();
-  if (!idempotencyKey || idempotencyKey.length > 100) {
+  if (!idempotencyKey || idempotencyKey.length < 16 || idempotencyKey.length > 200) {
     return jsonError('A valid Idempotency-Key is required', 400);
   }
 
-  let body: { recipientEmail?: string; amount?: number; description?: string };
+  let body: { recipientEmail?: unknown; amount?: unknown; description?: unknown };
   try {
     body = await request.json();
   } catch {
     return jsonError('Invalid JSON body', 400);
   }
 
-  const recipientEmail = body.recipientEmail?.trim().toLowerCase();
-  const amount = Number(body.amount);
-  const description = body.description?.trim() || null;
+  const recipientEmail = typeof body.recipientEmail === 'string' ? body.recipientEmail.trim().toLowerCase() : '';
+  const amount = typeof body.amount === 'number' ? body.amount : Number(body.amount);
+  const description = typeof body.description === 'string'
+    ? body.description.trim().slice(0, MAX_DESCRIPTION_LENGTH) || null
+    : null;
 
-  if (!recipientEmail || !recipientEmail.includes('@') || recipientEmail.length > 320) {
+  if (!recipientEmail || recipientEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
     return jsonError('A valid recipient email is required', 400);
   }
 
-  if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
-    return jsonError('Amount must be a positive whole number of XAF', 400);
+  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > MAX_TRANSFER_XAF) {
+    return jsonError('Amount must be a positive whole number of XAF within the transfer limit', 400);
   }
 
-  const requestHash = `transfer:${recipientEmail}:${amount}:${description || ''}`;
+  const requestHash = hashRequest({ recipientEmail, amount, description });
 
   try {
     const result = await withTransaction(async (client) => {
@@ -71,14 +81,13 @@ export async function POST(request: Request) {
       }
 
       const senderResult = await client.query(
-        `SELECT id, balance, currency, status
+        `SELECT id, status
          FROM flowcash.wallets
          WHERE user_id = $1 AND currency = 'XAF'
          LIMIT 1`,
         [user.id],
       );
       const sender = senderResult.rows[0];
-
       if (!sender) throw Object.assign(new Error('Sender wallet not found'), { code: 'WALLET_NOT_FOUND' });
       if (sender.status !== 'active') throw Object.assign(new Error('Sender wallet is not active'), { code: 'WALLET_INACTIVE' });
 
@@ -91,7 +100,6 @@ export async function POST(request: Request) {
         [recipientEmail],
       );
       const recipient = recipientResult.rows[0];
-
       if (!recipient) throw Object.assign(new Error('Recipient not found'), { code: 'RECIPIENT_NOT_FOUND' });
       if (recipient.id === user.id) throw Object.assign(new Error('Self transfer is not allowed'), { code: 'SELF_TRANSFER' });
 
@@ -138,23 +146,19 @@ export async function POST(request: Request) {
         [recipientId, amount, recipientReference, description || `Transfert reçu de ${user.email || user.id}`, JSON.stringify({ ...metadataBase, direction: 'incoming', senderId: user.id })],
       );
 
-      const senderAccounts = await client.query(
-        `SELECT id, code FROM flowcash.ledger_accounts
-         WHERE wallet_id = $1 AND code IN ('CASH', 'AVAILABLE')`,
-        [senderId],
+      const accounts = await client.query(
+        `SELECT id, wallet_id, code
+         FROM flowcash.ledger_accounts
+         WHERE wallet_id IN ($1, $2) AND code IN ('CASH', 'AVAILABLE')
+         ORDER BY wallet_id, code
+         FOR UPDATE`,
+        [senderId, recipientId],
       );
-      const recipientAccounts = await client.query(
-        `SELECT id, code FROM flowcash.ledger_accounts
-         WHERE wallet_id = $1 AND code IN ('CASH', 'AVAILABLE')`,
-        [recipientId],
-      );
-      const senderMap = new Map(senderAccounts.rows.map((row) => [row.code, row.id]));
-      const recipientMap = new Map(recipientAccounts.rows.map((row) => [row.code, row.id]));
-
-      const senderAvailable = senderMap.get('AVAILABLE');
-      const senderCash = senderMap.get('CASH');
-      const recipientAvailable = recipientMap.get('AVAILABLE');
-      const recipientCash = recipientMap.get('CASH');
+      const accountMap = new Map(accounts.rows.map((row) => [`${row.wallet_id}:${row.code}`, row.id]));
+      const senderAvailable = accountMap.get(`${senderId}:AVAILABLE`);
+      const senderCash = accountMap.get(`${senderId}:CASH`);
+      const recipientAvailable = accountMap.get(`${recipientId}:AVAILABLE`);
+      const recipientCash = accountMap.get(`${recipientId}:CASH`);
 
       if (!senderAvailable || !senderCash || !recipientAvailable || !recipientCash) {
         throw new Error('Wallet ledger accounts are not provisioned');
@@ -205,9 +209,9 @@ export async function POST(request: Request) {
 
       await client.query(
         `UPDATE flowcash.idempotency_keys
-         SET status = 'completed', response = $1::jsonb, updated_at = now()
-         WHERE user_id = $2 AND idempotency_key = $3`,
-        [JSON.stringify(response), user.id, idempotencyKey],
+         SET status = 'completed', transaction_id = $1, response = $2::jsonb, updated_at = now()
+         WHERE user_id = $3 AND idempotency_key = $4`,
+        [senderTransaction.rows[0].id, JSON.stringify(response), user.id, idempotencyKey],
       );
 
       return { replay: false, response };
