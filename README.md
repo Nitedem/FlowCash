@@ -18,3 +18,5 @@ Supabase n'est pas utilisé dans l'architecture FlowCash.
 ## Développement
 
 Les fonctionnalités métier, l'authentification, le moteur financier et les intégrations de paiement seront ajoutés progressivement après validation et tests de chaque couche.
+
+<!-- Vercel redeploy trigger after environment configuration -->
