@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const MAX_TRANSFER_XAF = 100_000_000;
+
 export function TransferForm() {
   const router = useRouter();
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -16,6 +18,28 @@ export function TransferForm() {
     setBusy(true);
     setMessage('');
 
+    const normalizedEmail = recipientEmail.trim().toLowerCase();
+    const normalizedAmount = amount.trim();
+
+    if (!/^\d+$/.test(normalizedAmount)) {
+      setMessage('Le montant doit être un nombre entier positif.');
+      setBusy(false);
+      return;
+    }
+
+    const amountNumber = Number(normalizedAmount);
+    if (!Number.isSafeInteger(amountNumber) || amountNumber <= 0 || amountNumber > MAX_TRANSFER_XAF) {
+      setMessage(`Le montant doit être compris entre 1 et ${MAX_TRANSFER_XAF.toLocaleString('fr-FR')} XAF.`);
+      setBusy(false);
+      return;
+    }
+
+    if (!normalizedEmail || normalizedEmail.length > 320) {
+      setMessage('Veuillez saisir une adresse e-mail valide.');
+      setBusy(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/wallet/transfer', {
         method: 'POST',
@@ -23,7 +47,7 @@ export function TransferForm() {
           'Content-Type': 'application/json',
           'Idempotency-Key': crypto.randomUUID(),
         },
-        body: JSON.stringify({ recipientEmail, amount: Number(amount), description }),
+        body: JSON.stringify({ recipientEmail: normalizedEmail, amount: normalizedAmount, description: description.trim() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Transfert impossible');
@@ -49,18 +73,18 @@ export function TransferForm() {
       <form onSubmit={submit} className="transfer-form">
         <label>
           E-mail du bénéficiaire
-          <input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} required placeholder="beneficiaire@email.com" autoComplete="email" />
+          <input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} required placeholder="beneficiaire@email.com" autoComplete="email" maxLength={320} />
         </label>
         <label>
           Montant (XAF)
-          <input type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="10000" inputMode="numeric" />
+          <input type="text" inputMode="numeric" pattern="[0-9]*" value={amount} onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))} required placeholder="10000" autoComplete="off" />
         </label>
         <label>
           Motif (facultatif)
           <input value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} placeholder="Ex. Paiement" />
         </label>
         <button type="submit" disabled={busy}>{busy ? 'Traitement sécurisé…' : 'Envoyer maintenant'}</button>
-        {message && <p role="status">{message}</p>}
+        {message && <p role="status" aria-live="polite">{message}</p>}
       </form>
     </section>
   );
