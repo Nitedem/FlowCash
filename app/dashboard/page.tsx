@@ -23,10 +23,11 @@ type TransactionRow = {
 
 async function ensureWallet(userId: string, name?: string | null, email?: string | null) {
   await sql`
-    INSERT INTO flowcash.profiles (id, full_name)
-    VALUES (${userId}, ${name || email || null})
+    INSERT INTO flowcash.profiles (id, full_name, email)
+    VALUES (${userId}, ${name || email || null}, ${email?.trim().toLowerCase() || null})
     ON CONFLICT (id) DO UPDATE SET
       full_name = COALESCE(EXCLUDED.full_name, flowcash.profiles.full_name),
+      email = COALESCE(EXCLUDED.email, flowcash.profiles.email),
       updated_at = now()
   `;
 
