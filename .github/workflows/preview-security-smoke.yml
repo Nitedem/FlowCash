@@ -1,0 +1,66 @@
+name: FlowCash Preview Security Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: 'Protected Vercel preview URL'
+        required: true
+        type: string
+  repository_dispatch:
+    types: [vercel.deployment.success]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  fx-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve deployment URL
+        id: deployment
+        env:
+          INPUT_URL: ${{ inputs.deployment_url }}
+          EVENT_URL: ${{ github.event.client_payload.url }}
+        run: |
+          URL="$INPUT_URL"
+          if [ -z "$URL" ]; then URL="$EVENT_URL"; fi
+          if [ -z "$URL" ]; then
+            echo 'No deployment URL supplied.' >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Mint GitHub OIDC token
+        id: oidc
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken();
+            core.setSecret(token);
+            core.setOutput('token', token);
+
+      - name: Smoke test protected FX endpoint
+        env:
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.url }}
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: |
+          set -euo pipefail
+          URL="${DEPLOYMENT_URL%/}/api/fx?from=EUR&to=USD&amount=100"
+          curl --fail-with-body --silent --show-error \
+            -H "x-vercel-trusted-oidc-idp-token: ${OIDC_TOKEN}" \
+            "$URL" > response.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('response.json', 'utf8'));
+          if (!body.success && typeof body.rate !== 'number') {
+            console.error(body);
+            process.exit(1);
+          }
+          if (body.from !== 'EUR' || body.to !== 'USD' || !(body.rate > 0)) {
+            console.error('Invalid FX response:', body);
+            process.exit(1);
+          }
+          console.log(`FX smoke OK: EUR 100 -> USD ${body.convertedAmount} @ ${body.rate}`);
+          NODE
