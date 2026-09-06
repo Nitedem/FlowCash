@@ -22,6 +22,35 @@ type TransactionRow = {
   created_at: string;
 };
 
+const transactionLabels: Record<string, string> = {
+  deposit: 'Dépôt',
+  withdrawal: 'Retrait',
+  transfer: 'Transfert',
+  payment: 'Paiement',
+  refund: 'Remboursement',
+};
+
+const statusLabels: Record<string, string> = {
+  completed: 'Réussie',
+  pending: 'En attente',
+  failed: 'Échouée',
+};
+
+function formatAmount(amount: string, currency: string) {
+  return `${Number(amount).toLocaleString('fr-FR')} ${currency}`;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function transactionSign(type: string) {
+  return type === 'deposit' || type === 'refund' ? '+' : '−';
+}
+
 async function ensureWallet(userId: string, name?: string | null, email?: string | null) {
   await sql`
     INSERT INTO flowcash.profiles (id, full_name, email)
@@ -73,13 +102,37 @@ export default async function DashboardPage() {
         <h1>Bonjour {user.name || 'à vous'}.</h1>
         <p>Votre portefeuille FlowCash est connecté à votre compte financier.</p>
         <div className="dashboard-grid">
-          <section><small>SOLDE</small><strong>{Number(wallet.balance).toLocaleString('fr-FR')} {wallet.currency}</strong></section>
-          <section><small>TRANSACTIONS</small><strong>{transactions.length}</strong></section>
+          <section><small>SOLDE DISPONIBLE</small><strong>{formatAmount(wallet.balance, wallet.currency)}</strong></section>
+          <section><small>10 DERNIÈRES OPÉRATIONS</small><strong>{transactions.length}</strong></section>
         </div>
         <TransferForm />
-        <section className="transactions-section">
-          <h2>Dernières transactions</h2>
-          {transactions.length === 0 ? <p>Aucune transaction pour le moment.</p> : <div className="transactions-list">{transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.description || transaction.type}</strong><small>{transaction.reference}</small></div><strong>{Number(transaction.amount).toLocaleString('fr-FR')} {transaction.currency}</strong></article>)}</div>}
+        <section className="transactions-section" aria-labelledby="transactions-title">
+          <div className="transactions-heading">
+            <div><small>ACTIVITÉ FINANCIÈRE</small><h2 id="transactions-title">Historique des opérations</h2></div>
+            <span>{transactions.length} opération{transactions.length > 1 ? 's' : ''}</span>
+          </div>
+          {transactions.length === 0 ? (
+            <div className="transactions-empty"><strong>Aucune opération</strong><p>Vos mouvements financiers apparaîtront ici.</p></div>
+          ) : (
+            <div className="transactions-list">
+              {transactions.map((transaction) => (
+                <article key={transaction.id} className={`transaction-row transaction-${transaction.status}`}>
+                  <div className="transaction-main">
+                    <div className="transaction-icon" aria-hidden="true">{transactionSign(transaction.type)}</div>
+                    <div>
+                      <strong>{transaction.description || transactionLabels[transaction.type] || transaction.type}</strong>
+                      <small>{transactionLabels[transaction.type] || transaction.type} · {formatDate(transaction.created_at)}</small>
+                      <small className="transaction-reference">Réf. {transaction.reference}</small>
+                    </div>
+                  </div>
+                  <div className="transaction-meta">
+                    <strong>{transactionSign(transaction.type)}{formatAmount(transaction.amount, transaction.currency)}</strong>
+                    <span className={`status-badge status-${transaction.status}`}>{statusLabels[transaction.status] || transaction.status}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>
