@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - feat/multicurrency-payment-requests
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       deployment_url:
-        description: 'Protected Vercel preview URL'
+        description: 'Exact protected Vercel deployment URL'
         required: false
         type: string
   repository_dispatch:
@@ -26,12 +29,17 @@ jobs:
         env:
           INPUT_URL: ${{ inputs.deployment_url }}
           EVENT_URL: ${{ github.event.client_payload.url }}
+          EXACT_DEPLOYMENT_URL: ${{ github.event.client_payload.deployment_url }}
           BRANCH_URL: https://flowcash-git-feat-mul-007c82-nitedemmelchior-gmailcoms-projects.vercel.app
         run: |
-          URL="$INPUT_URL"
-          if [ -z "$URL" ]; then URL="$EVENT_URL"; fi
+          set -euo pipefail
+          URL="${INPUT_URL:-}"
+          if [ -z "$URL" ]; then URL="${EXACT_DEPLOYMENT_URL:-}"; fi
+          if [ -z "$URL" ]; then URL="${EVENT_URL:-}"; fi
           if [ -z "$URL" ]; then URL="$BRANCH_URL"; fi
+          URL="${URL%/}"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Testing deployment: $URL"
 
       - name: Mint GitHub OIDC token
         id: oidc
@@ -48,17 +56,18 @@ jobs:
           OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           set -euo pipefail
-          URL="${DEPLOYMENT_URL%/}/api/fx?from=EUR&to=USD&amount=100"
-          curl --fail-with-body --silent --show-error \
+          URL="${DEPLOYMENT_URL}/api/fx?from=EUR&to=USD&amount=100"
+          response="$(mktemp)"
+          status="$(curl -sS -o "$response" -w '%{http_code}' \
+            --connect-timeout 10 --max-time 30 \
             -H "x-vercel-trusted-oidc-idp-token: ${OIDC_TOKEN}" \
-            "$URL" > response.json
+            "$URL")"
+          echo "HTTP status: $status"
+          cat "$response"
+          test "$status" = "200"
           node - <<'NODE'
           const fs = require('fs');
-          const body = JSON.parse(fs.readFileSync('response.json', 'utf8'));
-          if (!body.success && typeof body.rate !== 'number') {
-            console.error(body);
-            process.exit(1);
-          }
+          const body = JSON.parse(fs.readFileSync(process.env.RESPONSE_FILE || '/dev/null', 'utf8'));
           if (body.from !== 'EUR' || body.to !== 'USD' || !(body.rate > 0)) {
             console.error('Invalid FX response:', body);
             process.exit(1);
