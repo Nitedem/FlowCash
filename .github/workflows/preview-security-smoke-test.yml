@@ -1,0 +1,36 @@
+name: Preview security smoke test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/multicurrency-payment-requests]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub Actions OIDC token
+        id: token
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken();
+            core.setSecret(token);
+            core.setOutput('token', token);
+
+      - name: Call protected preview
+        env:
+          OIDC_TOKEN: ${{ steps.token.outputs.token }}
+          PREVIEW_URL: https://flowcash-git-feat-mul-007c82-nitedemmelchior-gmailcoms-projects.vercel.app
+        run: |
+          set -euo pipefail
+          response="$(mktemp)"
+          status="$(curl -sS -o "$response" -w '%{http_code}' --connect-timeout 10 --max-time 30 "$PREVIEW_URL/api/fx?from=EUR&to=USD&amount=100" -H "x-vercel-trusted-oidc-idp-token: $OIDC_TOKEN")"
+          echo "HTTP status: $status"
+          cat "$response"
+          test "$status" = "200"

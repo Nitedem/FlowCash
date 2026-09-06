@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/payment-requests/expire",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
