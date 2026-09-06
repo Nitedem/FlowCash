@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WalletOperations } from './wallet-operations';
+import styles from './wallets.module.css';
 
 type Wallet = { id: string; currency: string; balance: string; status: string };
 type Currency = { code: string; name: string; symbol: string };
@@ -88,12 +89,12 @@ export function Wallets() {
       <div className="wallet-grid">
         {wallets.map((wallet) => (
           <article className="wallet-card" key={wallet.id}>
-            <div className="wallet-card-main">
+            <div className={styles.walletCardMain}>
               <div><small>{wallet.currency}</small><strong>{Number(wallet.balance).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
               <span className={`status-badge status-${wallet.status}`}>{wallet.status === 'active' ? 'Actif' : wallet.status === 'closed' ? 'Fermé' : wallet.status}</span>
             </div>
             {wallet.currency !== 'XAF' && wallet.status === 'active' && (
-              <button type="button" className="wallet-delete" onClick={() => void removeWallet(wallet)} disabled={busy || Number(wallet.balance) !== 0}>
+              <button type="button" className={styles.walletDelete} onClick={() => void removeWallet(wallet)} disabled={busy || Number(wallet.balance) !== 0}>
                 Supprimer
               </button>
             )}
@@ -110,7 +111,7 @@ export function Wallets() {
           <button type="button" onClick={() => void addWallet()} disabled={!selected || busy}>{busy ? 'Création…' : 'Ajouter'}</button>
         </div>
       )}
-      <p className="wallet-management-note">Le portefeuille XAF principal reste actif. Les autres portefeuilles peuvent être supprimés uniquement lorsqu’ils sont vides et sans historique financier.</p>
+      <p className={styles.walletManagementNote}>Le portefeuille XAF principal reste actif. Les autres portefeuilles peuvent être supprimés uniquement lorsqu’ils sont vides et sans historique financier.</p>
       {error && <p className="form-error" role="alert">{error}</p>}
     </section>
   );
