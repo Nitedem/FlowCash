@@ -41,7 +41,9 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
 
   await sql`
     INSERT INTO flowcash.ledger_accounts (wallet_id, code, currency)
-    VALUES (${wallet.id}, 'CASH', 'XAF')
+    VALUES
+      (${wallet.id}, 'CASH', 'XAF'),
+      (${wallet.id}, 'AVAILABLE', 'XAF')
     ON CONFLICT (wallet_id, code) DO NOTHING
   `;
 
