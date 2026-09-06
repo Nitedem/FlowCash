@@ -9,6 +9,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@neondatabase/auth": "latest",
+    "@neondatabase/auth-ui": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
