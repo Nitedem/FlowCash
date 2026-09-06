@@ -1,11 +1,14 @@
 name: FlowCash Preview Security Smoke
 
 on:
+  push:
+    branches:
+      - feat/multicurrency-payment-requests
   workflow_dispatch:
     inputs:
       deployment_url:
         description: 'Protected Vercel preview URL'
-        required: true
+        required: false
         type: string
   repository_dispatch:
     types: [vercel.deployment.success]
@@ -23,13 +26,11 @@ jobs:
         env:
           INPUT_URL: ${{ inputs.deployment_url }}
           EVENT_URL: ${{ github.event.client_payload.url }}
+          BRANCH_URL: https://flowcash-git-feat-mul-007c82-nitedemmelchior-gmailcoms-projects.vercel.app
         run: |
           URL="$INPUT_URL"
           if [ -z "$URL" ]; then URL="$EVENT_URL"; fi
-          if [ -z "$URL" ]; then
-            echo 'No deployment URL supplied.' >&2
-            exit 1
-          fi
+          if [ -z "$URL" ]; then URL="$BRANCH_URL"; fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Mint GitHub OIDC token
