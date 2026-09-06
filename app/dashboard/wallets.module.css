@@ -2,6 +2,7 @@
 .walletDelete { border: 1px solid #6d3c43; border-radius: 9px; padding: 8px 11px; background: transparent; color: #df9aa3; font-size: 11px; font-weight: 700; }
 .walletDelete:disabled { cursor: not-allowed; opacity: .45; }
 .walletManagementNote { margin: 12px 0 0; color: #7894ad; font-size: 11px; line-height: 1.5; }
+.walletCode { margin: 5px 0 0; color: #7894ad; font-size: 9px; letter-spacing: .05em; }
 .walletOperations { margin-top: 16px; padding: 18px; border: 1px solid #38536d; border-radius: 14px; background: rgba(18, 56, 90, .2); }
 .walletOperationHead { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .walletOperationHead small { display: block; color: #7894ad; font-size: 10px; letter-spacing: .12em; }
