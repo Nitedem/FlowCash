@@ -30,12 +30,12 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
       updated_at = now()
   `;
 
-  const wallets = await sql<WalletRow[]>`
+  const wallets = (await sql`
     INSERT INTO flowcash.wallets (user_id, currency)
     VALUES (${userId}, 'XAF')
     ON CONFLICT (user_id, currency) DO UPDATE SET updated_at = now()
     RETURNING id, balance::text, currency, status
-  `;
+  `) as unknown as WalletRow[];
 
   const wallet = wallets[0];
 
@@ -67,13 +67,13 @@ export default async function DashboardPage() {
   }
 
   const wallet = await ensureWallet(user.id, user.name, user.email);
-  const transactions = await sql<TransactionRow[]>`
+  const transactions = (await sql`
     SELECT id, type, amount::text, currency, status, reference, description, created_at::text
     FROM flowcash.transactions
     WHERE wallet_id = ${wallet.id}
     ORDER BY created_at DESC
     LIMIT 10
-  `;
+  `) as unknown as TransactionRow[];
 
   return (
     <main className="dashboard-shell">
