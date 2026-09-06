@@ -1,13 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => {
-    // Keep the production UI usable even when a server component fails.
-    // The detailed error is intentionally not rendered to users.
-  }, []);
-
+export default function GlobalError({ reset }: { reset: () => void }) {
   return (
     <main className="auth-shell">
       <section className="auth-card">
