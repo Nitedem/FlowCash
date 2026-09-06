@@ -30,8 +30,19 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
     VALUES (${userId},'XAF','FCW-' || upper(substr(replace(gen_random_uuid()::text,'-',''),1,12)))
     ON CONFLICT (user_id,currency) DO UPDATE SET updated_at=now()
     RETURNING id,balance::text,currency,status`;
-  const wallet = wallets[0] as WalletRow|undefined; if(!wallet)throw new Error('Wallet could not be provisioned');
-  await sql`INSERT INTO flowcash.ledger_accounts (wallet_id,code,currency) VALUES (${wallet.id},'CASH','XAF'),(${wallet.id},'AVAILABLE','XAF') ON CONFLICT (wallet_id,code) DO NOTHING`;
+  const wallet = wallets[0] as WalletRow|undefined;
+  if(!wallet) throw new Error('Wallet could not be provisioned');
+
+  // Repair/provision the double-entry accounts for every existing wallet owned by the user.
+  // This keeps older USD/EUR/CAD wallets compatible with the same ledger guarantees as XAF.
+  const userWallets = await sql`SELECT id,currency FROM flowcash.wallets WHERE user_id=${userId}` as { id: string; currency: string }[];
+  for (const userWallet of userWallets) {
+    await sql`
+      INSERT INTO flowcash.ledger_accounts (wallet_id,code,currency)
+      VALUES (${userWallet.id},'CASH',${userWallet.currency}),(${userWallet.id},'AVAILABLE',${userWallet.currency})
+      ON CONFLICT (wallet_id,code) DO UPDATE SET currency=EXCLUDED.currency
+    `;
+  }
   return wallet;
 }
 
