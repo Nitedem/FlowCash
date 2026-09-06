@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="page-shell">
@@ -10,8 +12,8 @@ export default function Home() {
           conçue pour évoluer de manière sécurisée.
         </p>
         <div className="actions">
-          <button>Créer un compte</button>
-          <button className="secondary">Se connecter</button>
+          <Link href="/auth/sign-up">Créer un compte</Link>
+          <Link className="secondary" href="/auth/sign-in">Se connecter</Link>
         </div>
       </section>
       <section className="features">
