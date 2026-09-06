@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import styles from './wallets.module.css';
 
 type Wallet = { id: string; currency: string; balance: string; status: string };
 
@@ -50,18 +51,18 @@ export function WalletOperations({ wallet }: { wallet: Wallet }) {
   }
 
   return (
-    <div className="wallet-operations" aria-label="Opérations du portefeuille XAF">
-      <div className="wallet-operation-head">
+    <div className={styles.walletOperations} aria-label="Opérations du portefeuille XAF">
+      <div className={styles.walletOperationHead}>
         <div>
           <small>OPÉRATIONS</small>
           <strong>Ajouter des fonds</strong>
         </div>
         <span>TEST</span>
       </div>
-      <div className="wallet-operation-form">
+      <div className={styles.walletOperationForm}>
         <label>
           Montant du dépôt
-          <div className="wallet-operation-input">
+          <div className={styles.walletOperationInput}>
             <input
               type="text"
               inputMode="numeric"
@@ -78,9 +79,9 @@ export function WalletOperations({ wallet }: { wallet: Wallet }) {
           {busy ? 'Dépôt en cours…' : 'Déposer maintenant'}
         </button>
       </div>
-      <p className="wallet-operation-note">Dépôt de test uniquement · maximum {MAX_TEST_DEPOSIT.toLocaleString('fr-FR')} XAF.</p>
+      <p className={styles.walletOperationNote}>Dépôt de test uniquement · maximum {MAX_TEST_DEPOSIT.toLocaleString('fr-FR')} XAF.</p>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {message && <p className="form-success" role="status" aria-live="polite">{message}</p>}
+      {message && <p className={styles.formSuccess} role="status" aria-live="polite">{message}</p>}
     </div>
   );
 }
