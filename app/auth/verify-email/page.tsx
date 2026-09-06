@@ -1,10 +1,10 @@
 'use client';
 
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, Suspense, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 
-export default function VerifyEmailPage() {
+function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialEmail = searchParams.get('email') || '';
@@ -85,61 +85,69 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card">
-        <h1>Vérifiez votre e-mail</h1>
-        <p>Entrez le code à 6 chiffres reçu par e-mail pour activer votre compte FlowCash.</p>
+    <section className="auth-card">
+      <h1>Vérifiez votre e-mail</h1>
+      <p>Entrez le code à 6 chiffres reçu par e-mail pour activer votre compte FlowCash.</p>
 
-        <form onSubmit={handleVerify}>
-          <label>
-            Adresse e-mail
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              required
-            />
-          </label>
+      <form onSubmit={handleVerify}>
+        <label>
+          Adresse e-mail
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            required
+          />
+        </label>
 
-          <div>
-            <label>Code de vérification</label>
-            <div className="otp-grid" aria-label="Code de vérification à 6 chiffres">
-              {digits.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(element) => { otpRefs.current[index] = element; }}
-                  className="otp-cell"
-                  inputMode="numeric"
-                  pattern="[0-9]"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(event) => updateDigit(index, event.target.value)}
-                  onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                  autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                  aria-label={`Chiffre ${index + 1}`}
-                  required
-                />
-              ))}
-            </div>
+        <div>
+          <label>Code de vérification</label>
+          <div className="otp-grid" aria-label="Code de vérification à 6 chiffres">
+            {digits.map((digit, index) => (
+              <input
+                key={index}
+                ref={(element) => { otpRefs.current[index] = element; }}
+                className="otp-cell"
+                inputMode="numeric"
+                pattern="[0-9]"
+                maxLength={1}
+                value={digit}
+                onChange={(event) => updateDigit(index, event.target.value)}
+                onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                aria-label={`Chiffre ${index + 1}`}
+                required
+              />
+            ))}
           </div>
+        </div>
 
-          {error && <p role="alert">{error}</p>}
-          {message && <p className="auth-message">{message}</p>}
+        {error && <p role="alert">{error}</p>}
+        {message && <p className="auth-message">{message}</p>}
 
-          <button type="submit" disabled={loading || otp.length !== 6}>
-            {loading ? 'Vérification…' : 'Vérifier mon compte'}
-          </button>
-        </form>
-
-        <button type="button" onClick={resendCode} disabled={resending || !normalizedEmail}>
-          {resending ? 'Envoi…' : 'Renvoyer le code'}
+        <button type="submit" disabled={loading || otp.length !== 6}>
+          {loading ? 'Vérification…' : 'Vérifier mon compte'}
         </button>
+      </form>
 
-        <p>
-          <a href="/auth/sign-in">Retour à la connexion</a>
-        </p>
-      </section>
+      <button type="button" onClick={resendCode} disabled={resending || !normalizedEmail}>
+        {resending ? 'Envoi…' : 'Renvoyer le code'}
+      </button>
+
+      <p>
+        <a href="/auth/sign-in">Retour à la connexion</a>
+      </p>
+    </section>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <main className="auth-shell">
+      <Suspense fallback={<section className="auth-card"><p>Chargement de la vérification…</p></section>}>
+        <VerifyEmailForm />
+      </Suspense>
     </main>
   );
 }
