@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server';
 import { sql } from '@/lib/db/server';
+import { TransferForm } from './transfer-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,9 +44,7 @@ async function ensureWallet(userId: string, name?: string | null, email?: string
 
   await sql`
     INSERT INTO flowcash.ledger_accounts (wallet_id, code, currency)
-    VALUES
-      (${wallet.id}, 'CASH', 'XAF'),
-      (${wallet.id}, 'AVAILABLE', 'XAF')
+    VALUES (${wallet.id}, 'CASH', 'XAF'), (${wallet.id}, 'AVAILABLE', 'XAF')
     ON CONFLICT (wallet_id, code) DO NOTHING
   `;
 
@@ -57,24 +56,14 @@ export default async function DashboardPage() {
   const user = session?.user;
 
   if (!user) {
-    return (
-      <main className="dashboard-shell">
-        <div className="dashboard-card">
-          <span className="status">FLOWCASH</span>
-          <h1>Session requise</h1>
-          <p>Connectez-vous pour accéder à votre portefeuille.</p>
-        </div>
-      </main>
-    );
+    return <main className="dashboard-shell"><div className="dashboard-card"><span className="status">FLOWCASH</span><h1>Session requise</h1><p>Connectez-vous pour accéder à votre portefeuille.</p></div></main>;
   }
 
   const wallet = await ensureWallet(user.id, user.name, user.email);
   const transactions = (await sql`
     SELECT id, type, amount::text, currency, status, reference, description, created_at::text
-    FROM flowcash.transactions
-    WHERE wallet_id = ${wallet.id}
-    ORDER BY created_at DESC
-    LIMIT 10
+    FROM flowcash.transactions WHERE wallet_id = ${wallet.id}
+    ORDER BY created_at DESC LIMIT 10
   `) as TransactionRow[];
 
   return (
@@ -82,28 +71,15 @@ export default async function DashboardPage() {
       <div className="dashboard-card">
         <span className="status">FLOWCASH</span>
         <h1>Bonjour {user.name || 'à vous'}.</h1>
-        <p>Votre portefeuille FlowCash est maintenant connecté à votre compte financier.</p>
+        <p>Votre portefeuille FlowCash est connecté à votre compte financier.</p>
         <div className="dashboard-grid">
           <section><small>SOLDE</small><strong>{Number(wallet.balance).toLocaleString('fr-FR')} {wallet.currency}</strong></section>
           <section><small>TRANSACTIONS</small><strong>{transactions.length}</strong></section>
         </div>
+        <TransferForm />
         <section className="transactions-section">
           <h2>Dernières transactions</h2>
-          {transactions.length === 0 ? (
-            <p>Aucune transaction pour le moment.</p>
-          ) : (
-            <div className="transactions-list">
-              {transactions.map((transaction) => (
-                <article key={transaction.id}>
-                  <div>
-                    <strong>{transaction.description || transaction.type}</strong>
-                    <small>{transaction.reference}</small>
-                  </div>
-                  <strong>{Number(transaction.amount).toLocaleString('fr-FR')} {transaction.currency}</strong>
-                </article>
-              ))}
-            </div>
-          )}
+          {transactions.length === 0 ? <p>Aucune transaction pour le moment.</p> : <div className="transactions-list">{transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.description || transaction.type}</strong><small>{transaction.reference}</small></div><strong>{Number(transaction.amount).toLocaleString('fr-FR')} {transaction.currency}</strong></article>)}</div>}
         </section>
       </div>
     </main>
