@@ -23,6 +23,19 @@ h1 { max-width: 800px; margin: 24px 0; font-size: clamp(48px, 8vw, 92px); line-h
 .dashboard-card .status { margin-top: 0; }
 .dashboard-card h1 { font-size: clamp(38px, 6vw, 64px); }
 .dashboard-card > p { color: #aebdcb; line-height: 1.6; }
+.dashboard-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.notification-center { position: relative; }
+.notification-trigger { position: relative; width: 44px; height: 44px; border: 1px solid #38536d; border-radius: 12px; background: rgba(7,17,31,.72); color: #f6f8fb; }
+.notification-trigger span { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 2px 5px; border: 2px solid #09192a; border-radius: 999px; background: #f6f8fb; color: #07111f; font-size: 10px; font-weight: 800; }
+.notification-panel { position: absolute; z-index: 20; top: 52px; right: 0; width: min(360px, calc(100vw - 32px)); overflow: hidden; border: 1px solid #38536d; border-radius: 16px; background: #09192a; box-shadow: 0 24px 70px rgba(0,0,0,.38); }
+.notification-panel-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #1c344b; }
+.notification-panel-head button { border: 0; background: transparent; color: #aebdcb; font-size: 11px; }
+.notification-item { display: grid; gap: 5px; width: 100%; padding: 14px 16px; border: 0; border-bottom: 1px solid #1c344b; background: rgba(18,56,90,.28); color: #f6f8fb; text-align: left; }
+.notification-item.read { background: transparent; opacity: .72; }
+.notification-item strong { font-size: 13px; }
+.notification-item small { color: #aebdcb; line-height: 1.45; }
+.notification-item time { color: #7894ad; font-size: 10px; }
+.notification-empty { margin: 0; padding: 22px 16px; color: #7894ad; font-size: 12px; }
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 28px 0; }
 .dashboard-grid section { padding: 22px; border: 1px solid #1c344b; border-radius: 16px; background: rgba(7, 17, 31, .55); }
 .dashboard-grid small, .transfer-section small, .fx-section small, .transactions-heading small, .wallet-card small { display: block; color: #7894ad; font-size: 11px; letter-spacing: .12em; }
